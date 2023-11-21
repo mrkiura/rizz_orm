@@ -4,7 +4,7 @@ from orm import Database, Table, Column, ForeignKey
 
 
 @pytest.fixture
-def Author():
+def Author() -> Table:
     class Author(Table):
         name = Column(str)
         age = Column(int)
@@ -13,7 +13,7 @@ def Author():
 
 
 @pytest.fixture
-def Book(Author):
+def Book(Author) -> Table:
     class Book(Table):
         title = Column(str)
         published = Column(int)
@@ -23,7 +23,7 @@ def Book(Author):
 
 
 @pytest.fixture
-def db():
+def db() -> Database:
     DB_PATH = "./test.db"
     if os.path.exists(DB_PATH):
         os.remove("./test.db")

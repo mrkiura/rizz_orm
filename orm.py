@@ -1,8 +1,9 @@
 import inspect
 import sqlite3
+from typing import Tuple, List
 
 
-# TODO: Use jinja2 templates for constructing SQL
+# TODO: Use jinja2 templates for constructing SQL queries
 
 
 class Database:
@@ -12,6 +13,12 @@ class Database:
     def create(self, table):
         self.connection.execute(table._get_create_sql())
 
+    def save(self, instance: "Table"):
+        sql, values = instance._get_insert_sql()
+        cursor = self.connection.execute(sql, values)
+        instance._data["id"] = cursor.lastrowid
+        self.connection.commit()
+
     @property
     def tables(self):
         SELECT_TABLES_SQL = "SELECT name FROM sqlite_master WHERE type = 'table';"
@@ -19,6 +26,19 @@ class Database:
 
 
 class Table:
+    def __init__(self, **kwargs) -> None:
+        self._data = {
+            "id": None
+        }
+        for key, value in kwargs.items():
+            self._data[key] = value
+
+    def __getattribute__(self, key: str):
+        _data = super().__getattribute__("_data")
+        if key in _data:
+            return _data[key]
+        return super().__getattribute__(key)
+
     @classmethod
     def _get_create_sql(cls):
         CREATE_TABLE_SQL = "CREATE TABLE IF NOT EXISTS {name} ({fields});"
@@ -35,6 +55,31 @@ class Table:
         fields = ", ".join(fields)
         table_name = cls.__name__.lower()
         return CREATE_TABLE_SQL.format(name=table_name, fields=fields)
+
+    def _get_insert_sql(self) -> Tuple[str, List]:
+        INSERT_SQL = "INSERT INTO {name} ({fields}) VALUES ({placeholders});"
+        cls = self.__class__
+        fields, placeholders, values = [], [], []
+
+        for name, field in inspect.getmembers(cls):
+            if isinstance(field, Column):
+                fields.append(name)
+                values.append(getattr(self, name))
+                placeholders.append("?")
+            elif isinstance(field, ForeignKey):
+                fields.append(name + "_id")
+                values.append(getattr(self, name).id)
+                placeholders.append("?")
+
+        fields = ", ".join(fields)
+        placeholders = ", ".join(placeholders)
+
+        sql = INSERT_SQL.format(
+            name=cls.__name__.lower(),
+            fields=fields,
+            placeholders=placeholders
+        )
+        return sql, values
 
 
 class Column:
@@ -55,5 +100,5 @@ class Column:
 
 
 class ForeignKey:
-    def __init__(self, table) -> None:
+    def __init__(self, table):
         self.table = table
