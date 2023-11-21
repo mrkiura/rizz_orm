@@ -18,7 +18,6 @@ class Database:
         return {x[0] for x in self.connection.execute(SELECT_TABLES_SQL).fetchall()}
 
 
-
 class Table:
     @classmethod
     def _get_create_sql(cls):
