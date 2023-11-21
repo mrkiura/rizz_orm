@@ -9,12 +9,14 @@ class Database:
     def __init__(self, path: str):
         self.connection = sqlite3.Connection(path)
 
-    @property
-    def tables(self):
-        return []
-
     def create(self, table):
         self.connection.execute(table._get_create_sql())
+
+    @property
+    def tables(self):
+        SELECT_TABLES_SQL = "SELECT name FROM sqlite_master WHERE type = 'table';"
+        return {x[0] for x in self.connection.execute(SELECT_TABLES_SQL).fetchall()}
+
 
 
 class Table:

@@ -4,7 +4,7 @@ import sqlite3
 
 def test_create_db(db):
     assert isinstance(db.connection, sqlite3.Connection)
-    assert db.tables == []
+    assert len(db.tables) == 0
 
 
 def test_define_tables(Author, Book):
