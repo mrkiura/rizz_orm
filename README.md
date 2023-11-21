@@ -1,2 +1,3 @@
-# rizz_orm
+# RIZZ ORM
+
 An Object Relational Mapper
