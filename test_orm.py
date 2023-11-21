@@ -12,7 +12,7 @@ def test_create_db():
 
 
 def test_define_tables(Author, Book):
-    assert Author.name.type == str
+    assert Author.name._type == str
     assert Book.author.table == Author
 
     assert Author.name.sql_type == "TEXT"
