@@ -1,6 +1,6 @@
+import os
 import pytest
-
-from orm import Table, Column, ForeignKey
+from orm import Database, Table, Column, ForeignKey
 
 
 @pytest.fixture
@@ -20,3 +20,12 @@ def Book(Author):
         author = ForeignKey(Author)
 
     return Book
+
+
+@pytest.fixture
+def db():
+    DB_PATH = "./test.db"
+    if os.path.exists(DB_PATH):
+        os.remove("./test.db")
+    db = Database(DB_PATH)
+    return db

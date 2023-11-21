@@ -1,12 +1,8 @@
-import sqlite3
 import pytest
+import sqlite3
 
-from orm import Database
 
-
-def test_create_db():
-    db = Database("./test.db")
-
+def test_create_db(db):
     assert isinstance(db.connection, sqlite3.Connection)
     assert db.tables == []
 
@@ -19,9 +15,7 @@ def test_define_tables(Author, Book):
     assert Author.age.sql_type == "INTEGER"
 
 
-def test_create_tables(Author, Book):
-    db = Database("./test.db")
-
+def test_create_tables(db, Author, Book):
     db.create(Author)
     db.create(Book)
 
