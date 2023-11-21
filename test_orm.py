@@ -46,7 +46,7 @@ def test_save_author_instance(db: Database, Author: Table):
     db.save(alex)
     assert alex._get_insert_sql() == (
         "INSERT INTO author (age, name) VALUES (?, ?);",
-        [23, "John Doe"]
+        [69, "Alex Mwangi"]
     )
     assert alex.id == 1
 
