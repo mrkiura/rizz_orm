@@ -1,5 +1,6 @@
 import pytest
 import sqlite3
+from orm import Database, Table
 
 
 def test_create_db(db):
@@ -14,7 +15,7 @@ def test_define_tables(Author, Book):
     assert Author.name.sql_type == "TEXT"
     assert Author.age.sql_type == "INTEGER"
 
-
+#
 def test_create_tables(db, Author, Book):
     db.create(Author)
     db.create(Book)
@@ -29,7 +30,7 @@ def test_create_tables(db, Author, Book):
         assert table in db.tables
 
 
-def test_create_author_instance(db, Author):
+def test_create_author_instance(db: Database, Author: Table):
     db.create(Author)
 
     alex = Author(name="Alex Mwangi", age=69)
@@ -37,3 +38,26 @@ def test_create_author_instance(db, Author):
     assert alex.name == "Alex Mwangi"
     assert alex.age == 69
     assert alex.id is None
+
+
+def test_save_author_instance(db: Database, Author: Table):
+    db.create(Author)
+    alex = Author(name="Alex Mwangi", age=69)
+    db.save(alex)
+    assert alex._get_insert_sql() == (
+        "INSERT INTO author (age, name) VALUES (?, ?);",
+        [23, "John Doe"]
+    )
+    assert alex.id == 1
+
+    jane = Author(name="Jane Doe", age=28)
+    db.save(jane)
+    assert jane.id == 2
+
+    anna = Author(name="Anna Beba", age=43)
+    db.save(anna)
+    assert anna.id == 3
+
+    johnte = Author(name="John Te", age=39)
+    db.save(johnte)
+    assert johnte.id == 4
