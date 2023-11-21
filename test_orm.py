@@ -17,3 +17,30 @@ def test_define_tables(Author, Book):
 
     assert Author.name.sql_type == "TEXT"
     assert Author.age.sql_type == "INTEGER"
+
+
+def test_create_tables(Author, Book):
+    db = Database("./test.db")
+
+    db.create(Author)
+    db.create(Book)
+
+    assert Author._get_create_sql() == """
+    CREATE TABLE IF NOT EXISTS author (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        age INTEGER,
+        name TEXT
+    );
+    """
+
+    assert Book._get_create_sql() == """
+    CREATE TABLE IF NOT EXISTS book (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        author_id INTEGER,
+        published INTEGER,
+        title TEXT
+    );
+    """
+
+    for table in ("author", "book"):
+        assert table in db.tables
