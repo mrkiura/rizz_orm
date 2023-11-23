@@ -19,6 +19,9 @@ class Database:
         instance._data["id"] = cursor.lastrowid
         self.connection.commit()
 
+    def all(self, table: "Table"):
+        pass
+
     @property
     def tables(self):
         SELECT_TABLES_SQL = "SELECT name FROM sqlite_master WHERE type = 'table';"
