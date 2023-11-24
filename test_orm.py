@@ -1,8 +1,5 @@
-import pytest
 import sqlite3
 from orm import Database, Table
-
-from pprint import pprint
 
 
 def test_create_db(db):
@@ -17,7 +14,7 @@ def test_define_tables(Author, Book):
     assert Author.name.sql_type == "TEXT"
     assert Author.age.sql_type == "INTEGER"
 
-#
+
 def test_create_tables(db, Author, Book):
     db.create(Author)
     db.create(Book)
@@ -45,7 +42,13 @@ def test_create_author_instance(db: Database, Author: type[Table]):
 def test_save_author_instance(db: Database, Author: type[Table]):
     db.create(Author)
     alex = Author(name="Alex Mwangi", age=69)
+
+    assert alex.id is None
+
     db.save(alex)
+
+    assert alex.id is not None
+
     assert alex._get_insert_sql() == (
         "INSERT INTO author (age, name) VALUES (?, ?);",
         [69, "Alex Mwangi"]
