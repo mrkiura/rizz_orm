@@ -1,6 +1,6 @@
 import inspect
 import sqlite3
-from typing import Tuple, List, Union
+from typing import Any, Tuple, List, Union
 
 
 # TODO: Use jinja2 templates for constructing SQL queries
@@ -14,6 +14,16 @@ class Database:
 
     def create(self, table: type["Table"]):
         self.connection.execute(table._get_create_sql())
+
+    def get(self, table: type["Table"], id: str):
+        sql, fields, params = table._get_select_where_sql(id)
+        row = self.connection.execute(sql, params).fetchone()
+        if row is None:
+            raise Exception(f"{table.__name__} instance with id {id} does not exist")
+        instance = table()
+        for field, value in zip(fields, row):
+            setattr(instance, field, value)
+        return instance
 
     def save(self, instance: "Table"):
         sql, values = instance._get_insert_sql()
@@ -51,6 +61,11 @@ class Table:
         if key in _data:
             return _data[key]
         return super().__getattribute__(key)
+
+    def __setattr__(self, key: str, value: Value) -> None:
+        super().__setattr__(key, value)
+        if key in self._data:
+            self._data[key] = value
 
     @classmethod
     def _get_create_sql(cls) -> str:
@@ -111,6 +126,20 @@ class Table:
         )
 
         return sql, fields
+
+    @classmethod
+    def _get_select_where_sql(cls, id: str) -> Tuple[str, List[str], List[str]]:
+        SELECT_WHERE_SQL = "SELECT {fields} FROM {name} WHERE id = ?;"
+        fields = ["id"]
+        for name, field in inspect.getmembers(cls):
+            if isinstance(field, Column):
+                fields.append(name)
+            if isinstance(field, ForeignKey):
+                fields.append(name + "_id")
+
+        sql = SELECT_WHERE_SQL.format(name=cls.__name__.lower(), fields=", ".join(fields))
+        params = [id]
+        return sql, fields, params
 
 
 class Column:

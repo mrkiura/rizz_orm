@@ -30,7 +30,7 @@ def test_create_tables(db, Author, Book):
         assert table in db.tables
 
 
-def test_create_author_instance(db: Database, Author: Table):
+def test_create_author_instance(db: Database, Author: type[Table]):
     db.create(Author)
 
     alex = Author(name="Alex Mwangi", age=69)
@@ -40,7 +40,7 @@ def test_create_author_instance(db: Database, Author: Table):
     assert alex.id is None
 
 
-def test_save_author_instance(db: Database, Author: Table):
+def test_save_author_instance(db: Database, Author: type[Table]):
     db.create(Author)
     alex = Author(name="Alex Mwangi", age=69)
     db.save(alex)
@@ -81,3 +81,21 @@ def test_query_all(db: Database, Author: Table):
     assert len(authors) == 2
     assert isinstance(authors[0], Author)
     assert {author.age for author in authors} == {43, 28}
+
+
+def test_get_author(db, Author):
+    db.create(Author)
+    paul = Author(name="Paul Apostle", age=28)
+    db.save(paul)
+
+    query_result = db.get(Author, id=1)
+
+    assert Author._get_select_where_sql(id=1) == (
+        "SELECT id, age, name FROM author WHERE id = ?;",
+        ["id", "age", "name"],
+        [1]
+    )
+    assert isinstance(query_result, Author)
+    assert query_result.age == 28
+    assert query_result.name == "Paul Apostle"
+    assert query_result.id == 1
