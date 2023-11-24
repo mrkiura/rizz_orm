@@ -4,7 +4,7 @@ from orm import Database, Table, Column, ForeignKey
 
 
 @pytest.fixture
-def Author() -> Table:
+def Author() -> type[Table]:
     class Author(Table):
         name = Column(str)
         age = Column(int)
@@ -13,7 +13,7 @@ def Author() -> Table:
 
 
 @pytest.fixture
-def Book(Author) -> Table:
+def Book(Author) -> type[Table]:
     class Book(Table):
         title = Column(str)
         published = Column(int)

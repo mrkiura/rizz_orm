@@ -15,7 +15,7 @@ class Database:
     def create(self, table: type["Table"]):
         self.connection.execute(table._get_create_sql())
 
-    def get(self, table: type["Table"], id: str):
+    def get(self, table: type["Table"], id: str | int):
         sql, fields, params = table._get_select_where_sql(id)
         row = self.connection.execute(sql, params).fetchone()
         if row is None:
@@ -136,7 +136,7 @@ class Table:
         return sql, fields
 
     @classmethod
-    def _get_select_where_sql(cls, id: str) -> Tuple[str, List[str], List[str]]:
+    def _get_select_where_sql(cls, id: str | int) -> Tuple[str, List[str], List[str]]:
         SELECT_WHERE_SQL = "SELECT {fields} FROM {name} WHERE id = ?;"
         fields = ["id"]
         for name, field in inspect.getmembers(cls):

@@ -2,7 +2,7 @@ import sqlite3
 from orm import Database, Table
 
 
-def test_create_db(db):
+def test_create_db(db: Database):
     assert isinstance(db.connection, sqlite3.Connection)
     assert len(db.tables) == 0
 
@@ -68,7 +68,7 @@ def test_save_author_instance(db: Database, Author: type[Table]):
     assert johnte.id == 4
 
 
-def test_query_all(db: Database, Author: Table):
+def test_query_all(db: Database, Author: type[Table]):
     db.create(Author)
 
     anna = Author(name="Anna Beba", age=43)
@@ -88,12 +88,12 @@ def test_query_all(db: Database, Author: Table):
     assert {author.age for author in authors} == {43, 28}
 
 
-def test_get_author(db, Author):
+def test_get_author(db: Database, Author: type[Table]):
     db.create(Author)
     paul = Author(name="Paul Apostle", age=28)
     db.save(paul)
 
-    query_result = db.get(Author, id=1)
+    query_result = db.get(table=Author, id=1)
 
     assert Author._get_select_where_sql(id=1) == (
         "SELECT id, age, name FROM author WHERE id = ?;",
@@ -106,9 +106,9 @@ def test_get_author(db, Author):
     assert query_result.id == 1
 
 
-def test_get_book(db: type[Database], Author: type[Table], Book: type[Table]):
-    db.create(Author)
-    db.create(Book)
+def test_get_book(db: Database, Author: type[Table], Book: type[Table]):
+    db.create(table=Author)
+    db.create(table=Book)
 
     penny = Author(name="Penny", age=69)
     rajesh = Author(name="Rajesh", age=50)
@@ -128,7 +128,7 @@ def test_get_book(db: type[Database], Author: type[Table], Book: type[Table]):
     assert book1_query_result.author.id == penny.id
 
 
-def test_query_all_books_foreign_key(db, Author, Book):
+def test_query_all_books_foreign_key(db: Database, Author: type[Table], Book: type[Table]):
     db.create(Author)
     db.create(Book)
     wainaina = Author(name="Wainaina Miano", age=43)
