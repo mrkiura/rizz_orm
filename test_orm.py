@@ -81,7 +81,7 @@ def test_delete_record(db: Database, UserProfile: type[Table]):
     db.save(user)
     assert user.id is not None, "User should have an id after being saved to the database."
 
-    db.delete(user)
+    db.delete(UserProfile, user.id)
 
     try:
         db.get(UserProfile, user.id)
