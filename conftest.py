@@ -4,28 +4,32 @@ from orm import Database, Table, Column, ForeignKey
 
 
 @pytest.fixture
-def Author() -> type[Table]:
-    class Author(Table):
-        name = Column(str)
-        age = Column(int)
-
-    return Author
-
-
-@pytest.fixture
-def Book(Author) -> type[Table]:
-    class Book(Table):
-        title = Column(str)
-        published = Column(int)
-        author = ForeignKey(Author)
-
-    return Book
-
-
-@pytest.fixture
 def db() -> Database:
-    DB_PATH = "./test.db"
-    if os.path.exists(DB_PATH):
-        os.remove("./test.db")
-    db = Database(DB_PATH)
-    return db
+    """Database fixture that creates a new test database for each test session."""
+    db_path = "test.db"
+    if os.path.exists(db_path):
+        os.remove(db_path)
+    test_db = Database(db_path)
+    yield test_db
+    if os.path.exists(db_path):
+        os.remove(db_path)
+
+
+@pytest.fixture
+def UserProfile(db: Database) -> type[Table]:
+    """UserProfile model fixture."""
+    class UserProfile(Table):
+        username = Column(str)
+        email = Column(str)
+    db.create(UserProfile)
+    return UserProfile
+
+
+@pytest.fixture
+def StatusUpdate(db: Database, UserProfile: type[Table]) -> type[Table]:
+    """StatusUpdate model fixture with a foreign key to UserProfile."""
+    class StatusUpdate(Table):
+        content = Column(str)
+        user_profile = ForeignKey(UserProfile)
+    db.create(StatusUpdate)
+    return StatusUpdate

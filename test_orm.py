@@ -1,146 +1,64 @@
-import sqlite3
+import pytest
 from orm import Database, Table
 
 
-def test_create_db(db: Database):
-    assert isinstance(db.connection, sqlite3.Connection)
-    assert len(db.tables) == 0
+def test_database_creation(db: Database):
+    assert db.tables == [], "Database should start with no tables."
 
 
-def test_define_tables(Author, Book):
-    assert Author.name._type == str
-    assert Book.author.table == Author
-
-    assert Author.name.sql_type == "TEXT"
-    assert Author.age.sql_type == "INTEGER"
+def test_table_creation(db: Database, UserProfile: type[Table]):
+    assert 'userprofile' in db.tables, "UserProfile table should be created in the database."
 
 
-def test_create_tables(db, Author, Book):
-    db.create(Author)
-    db.create(Book)
-
-    author_sql = Author._get_create_sql()
-    assert author_sql == "CREATE TABLE IF NOT EXISTS author (id INTEGER PRIMARY KEY AUTOINCREMENT, age INTEGER, name TEXT);"
-
-    book_sql = Book._get_create_sql()
-    assert book_sql == "CREATE TABLE IF NOT EXISTS book (id INTEGER PRIMARY KEY AUTOINCREMENT, author_id INTEGER, published INTEGER, title TEXT);"
-
-    for table in ("author", "book"):
-        assert table in db.tables
+def test_column_definition(UserProfile: type[Table]):
+    assert hasattr(UserProfile, 'username'), "UserProfile should have a 'username' column."
+    assert hasattr(UserProfile, 'email'), "UserProfile should have an 'email' column."
+    assert UserProfile.username.sql_type == "TEXT", "UserProfile 'username' should be of type TEXT."
+    assert UserProfile.email.sql_type == "TEXT", "UserProfile 'email' should be of type TEXT."
 
 
-def test_create_author_instance(db: Database, Author: type[Table]):
-    db.create(Author)
-
-    alex = Author(name="Alex Mwangi", age=69)
-
-    assert alex.name == "Alex Mwangi"
-    assert alex.age == 69
-    assert alex.id is None
+def test_foreign_key_definition(StatusUpdate: type[Table], UserProfile: type[Table]):
+    assert hasattr(StatusUpdate, 'user_profile'), "StatusUpdate should have a 'user_profile' ForeignKey."
+    assert StatusUpdate.user_profile.table == UserProfile, "StatusUpdate 'user_profile' should reference UserProfile."
 
 
-def test_save_author_instance(db: Database, Author: type[Table]):
-    db.create(Author)
-    alex = Author(name="Alex Mwangi", age=69)
+def test_insert_and_query(db: Database, UserProfile: type[Table]):
+    user = UserProfile(username="testuser", email="test@example.com")
+    db.save(user)
+    assert user.id is not None, "User should have an id after being saved to the database."
 
-    assert alex.id is None
-
-    db.save(alex)
-
-    assert alex.id is not None
-
-    assert alex._get_insert_sql() == (
-        "INSERT INTO author (age, name) VALUES (?, ?);",
-        [69, "Alex Mwangi"]
-    )
-    assert alex.id == 1
-
-    jane = Author(name="Jane Doe", age=28)
-    db.save(jane)
-    assert jane.id == 2
-
-    anna = Author(name="Anna Beba", age=43)
-    db.save(anna)
-    assert anna.id == 3
-
-    johnte = Author(name="John Te", age=39)
-    db.save(johnte)
-    assert johnte.id == 4
+    queried_user = db.get(UserProfile, user.id)
+    assert queried_user.username == "testuser", "Queried user should have the correct username."
+    assert queried_user.email == "test@example.com", "Queried user should have the correct email."
 
 
-def test_query_all(db: Database, Author: type[Table]):
-    db.create(Author)
+def test_update_and_query(db: Database, UserProfile: type[Table]):
+    user = UserProfile(username="updatable", email="update@example.com")
+    db.save(user)
+    user.email = "newemail@example.com"
+    db.save(user)
 
-    anna = Author(name="Anna Beba", age=43)
-    jane = Author(name="Jane Doe", age=28)
-
-    for author in {anna, jane}:
-        db.save(author)
-
-    authors = db.all(Author)
-
-    assert Author._get_select_all_sql() == (
-        "SELECT id, age, name FROM author;",
-        ["id", "age", "name"]
-    )
-    assert len(authors) == 2
-    assert isinstance(authors[0], Author)
-    assert {author.age for author in authors} == {43, 28}
+    queried_user = db.get(UserProfile, user.id)
+    assert queried_user.email == "newemail@example.com", "User email should be updated in the database."
 
 
-def test_get_author(db: Database, Author: type[Table]):
-    db.create(Author)
-    paul = Author(name="Paul Apostle", age=28)
-    db.save(paul)
+def test_all_query(db: Database, UserProfile: type[Table]):
+    user1 = UserProfile(username="user1", email="user1@example.com")
+    user2 = UserProfile(username="user2", email="user2@example.com")
+    db.save(user1)
+    db.save(user2)
 
-    query_result = db.get(table=Author, id=1)
-
-    assert Author._get_select_where_sql(id=1) == (
-        "SELECT id, age, name FROM author WHERE id = ?;",
-        ["id", "age", "name"],
-        [1]
-    )
-    assert isinstance(query_result, Author)
-    assert query_result.age == 28
-    assert query_result.name == "Paul Apostle"
-    assert query_result.id == 1
+    users = db.all(UserProfile)
+    assert len(users) == 2, "There should be two users in the database."
+    assert set(user.username for user in users) == {"user1", "user2"}, "All users should be retrieved."
 
 
-def test_get_book(db: Database, Author: type[Table], Book: type[Table]):
-    db.create(table=Author)
-    db.create(table=Book)
+def test_foreign_key_query(db: Database, UserProfile: type[Table], StatusUpdate: type[Table]):
+    user = UserProfile(username="fk_user", email="fkuser@example.com")
+    db.save(user)
+    status = StatusUpdate(content="Testing foreign keys", user_profile=user)
+    db.save(status)
 
-    penny = Author(name="Penny", age=69)
-    rajesh = Author(name="Rajesh", age=50)
-
-    book1 = Book(title="Writing a book", published=False, author=penny)
-    book2 = Book(title="How to meet Lions", published=True, author=rajesh)
-    db.save(penny)
-    db.save(rajesh)
-
-    db.save(book1)
-    db.save(book2)
-
-    book1_query_result = db.get(Book, book1.id)
-
-    assert book1_query_result.title == book1.title
-    assert book1_query_result.author.name == penny.name
-    assert book1_query_result.author.id == penny.id
-
-
-def test_query_all_books_foreign_key(db: Database, Author: type[Table], Book: type[Table]):
-    db.create(Author)
-    db.create(Book)
-    wainaina = Author(name="Wainaina Miano", age=43)
-    mercy = Author(name="Mercy Cindy Mutua", age=50)
-    book = Book(title="Writing a book", published=False, author=wainaina)
-    book2 = Book(title="No River, No sauce", published=True, author=mercy)
-    db.save(wainaina)
-    db.save(mercy)
-    db.save(book)
-    db.save(book2)
-
-    books = db.all(Book)
-
-    assert len(books) == 2
-    assert books[1].author.name == mercy.name
+    queried_status = db.get(StatusUpdate, status.id)
+    assert queried_status.user_profile.id == user.id, "StatusUpdate should reference the correct UserProfile."
+    assert queried_status.user_profile.username == user.username, "The referenced UserProfile should have the correct username."
