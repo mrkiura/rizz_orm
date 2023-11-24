@@ -123,3 +123,21 @@ def test_get_book(db: type[Database], Author: type[Table], Book: type[Table]):
     assert book1_query_result.title == book1.title
     assert book1_query_result.author.name == penny.name
     assert book1_query_result.author.id == penny.id
+
+
+def test_query_all_books_foreign_key(db, Author, Book):
+    db.create(Author)
+    db.create(Book)
+    wainaina = Author(name="Wainaina Miano", age=43)
+    mercy = Author(name="Mercy Cindy Mutua", age=50)
+    book = Book(title="Writing a book", published=False, author=wainaina)
+    book2 = Book(title="No River, No sauce", published=True, author=mercy)
+    db.save(wainaina)
+    db.save(mercy)
+    db.save(book)
+    db.save(book2)
+
+    books = db.all(Book)
+
+    assert len(books) == 2
+    assert books[1].author.name == mercy.name
