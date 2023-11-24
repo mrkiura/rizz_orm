@@ -2,6 +2,8 @@ import pytest
 import sqlite3
 from orm import Database, Table
 
+from pprint import pprint
+
 
 def test_create_db(db):
     assert isinstance(db.connection, sqlite3.Connection)
@@ -99,3 +101,25 @@ def test_get_author(db, Author):
     assert query_result.age == 28
     assert query_result.name == "Paul Apostle"
     assert query_result.id == 1
+
+
+def test_get_book(db: type[Database], Author: type[Table], Book: type[Table]):
+    db.create(Author)
+    db.create(Book)
+
+    penny = Author(name="Penny", age=69)
+    rajesh = Author(name="Rajesh", age=50)
+
+    book1 = Book(title="Writing a book", published=False, author=penny)
+    book2 = Book(title="How to meet Lions", published=True, author=rajesh)
+    db.save(penny)
+    db.save(rajesh)
+
+    db.save(book1)
+    db.save(book2)
+
+    book1_query_result = db.get(Book, book1.id)
+
+    assert book1_query_result.title == book1.title
+    assert book1_query_result.author.name == penny.name
+    assert book1_query_result.author.id == penny.id

@@ -22,6 +22,10 @@ class Database:
             raise Exception(f"{table.__name__} instance with id {id} does not exist")
         instance = table()
         for field, value in zip(fields, row):
+            if field.endswith("_id"):
+                field = field[:-3]
+                fk = getattr(table, field)
+                value = self.get(fk.table, id=value)
             setattr(instance, field, value)
         return instance
 
