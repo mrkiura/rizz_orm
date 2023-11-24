@@ -35,6 +35,16 @@ class Database:
         instance._data["id"] = cursor.lastrowid
         self.connection.commit()
 
+    def update(self, instance: "Table"):
+        sql, values = instance._get_update_sql()
+        self.connection.execute(sql, values)
+        self.connection.commit()
+
+    def delete(self, table: type["Table"], id: Union[str, int]):
+        sql, parameters = table._get_delete_sql(id)
+        self.connection.execute(sql, parameters)
+        self.connection.commit()
+
     def all(self, table: type["Table"]) -> List["Table"]:
         sql, fields = table._get_select_all_sql()
 
@@ -148,6 +158,35 @@ class Table:
         sql = SELECT_WHERE_SQL.format(name=cls.__name__.lower(), fields=", ".join(fields))
         params = [id]
         return sql, fields, params
+
+    def _get_update_sql(self):
+        UPDATE_SQL = "UPDATE {name} SET {fields} WHERE id = ?"
+        cls = self.__class__
+        fields, values = [], []
+
+        for name, field in inspect.getmembers(cls):
+            if isinstance(field, Column):
+                fields.append(name)
+                values.append(getattr(self, name))
+            elif isinstance(field, ForeignKey):
+                fields.append(name + "_id")
+                values.append(getattr(self, name).id)
+        values.append(getattr(self, "id"))
+
+        sql = UPDATE_SQL.format(
+            name=cls.__name__.lower(),
+            fields=", ".join([f"{field} = ?" for field in fields])
+        )
+
+        return sql, values
+
+    @classmethod
+    def _get_delete_sql(cls, id):
+        DELETE_SQL = "DELETE FROM {name} WHERE id = ?"
+
+        sql = DELETE_SQL.format(name=cls.__name__.lower())
+
+        return sql, [id]
 
 
 class Column:

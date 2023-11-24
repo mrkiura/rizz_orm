@@ -62,3 +62,29 @@ def test_foreign_key_query(db: Database, UserProfile: type[Table], StatusUpdate:
     queried_status = db.get(StatusUpdate, status.id)
     assert queried_status.user_profile.id == user.id, "StatusUpdate should reference the correct UserProfile."
     assert queried_status.user_profile.username == user.username, "The referenced UserProfile should have the correct username."
+
+
+def test_update_record(db: Database, UserProfile: type[Table]):
+    user = UserProfile(username="update_test", email="update_test@example.com")
+    db.save(user)
+    assert user.id is not None, "User should have an id after being saved to the database."
+
+    user.email = "updated_email@example.com"
+    db.update(user)
+
+    updated_user = db.get(UserProfile, user.id)
+    assert updated_user.email == "updated_email@example.com", "User email should be updated in the database."
+
+
+def test_delete_record(db: Database, UserProfile: type[Table]):
+    user = UserProfile(username="delete_test", email="delete_test@example.com")
+    db.save(user)
+    assert user.id is not None, "User should have an id after being saved to the database."
+
+    db.delete(UserProfile, user.id)
+
+    try:
+        db.get(UserProfile, user.id)
+        assert False, "Deleted user should not be found in the database."
+    except Exception as e:
+        assert str(e) == f"{UserProfile.__name__} instance with id {user.id} does not exist", "Exception message should indicate that the user does not exist."
