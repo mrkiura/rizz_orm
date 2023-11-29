@@ -64,7 +64,7 @@ user = db.get(User, id=1)
 print(user.username, user.email)
 
 post = db.get(Post, id=1)
-print(post.title, post.content, post.author.username)
+print(f"Post: {post.asdict}")
 ```
 
 ### Updating Records
