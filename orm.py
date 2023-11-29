@@ -145,6 +145,11 @@ class Table:
 
         return sql, fields
 
+    @property
+    def asdict(self) -> dict:
+        _, fields, _ = self._get_select_where_sql(self.id)
+        return {field: getattr(self, field) for field in fields if not field.endswith("id")}
+
     @classmethod
     def _get_select_where_sql(cls, id: str | int) -> Tuple[str, List[str], List[str]]:
         SELECT_WHERE_SQL = "SELECT {fields} FROM {name} WHERE id = ?;"
