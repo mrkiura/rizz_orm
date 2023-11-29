@@ -102,6 +102,14 @@ class Table:
         table_name = cls.__name__.lower()
         return CREATE_TABLE_SQL.format(name=table_name, fields=fields)
 
+    @property
+    def fields(self) -> List[str]:
+        fields, cls = [], type(self)
+        for name, field in inspect.getmembers(cls):
+            if isinstance(field, Column):
+                fields.append(name)
+        return fields
+
     def _get_insert_sql(self) -> Tuple[str, List[Value]]:
         INSERT_SQL = "INSERT INTO {name} ({fields}) VALUES ({placeholders});"
         cls = self.__class__
@@ -145,10 +153,9 @@ class Table:
 
         return sql, fields
 
-    @property
     def asdict(self) -> dict:
-        _, fields, _ = self._get_select_where_sql(self.id)
-        return {field: getattr(self, field) for field in fields if not field.endswith("id")}
+        fields = self.fields
+        return {field: getattr(self, field) for field in fields}
 
     @classmethod
     def _get_select_where_sql(cls, id: str | int) -> Tuple[str, List[str], List[str]]:
