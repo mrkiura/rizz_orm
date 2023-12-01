@@ -1,6 +1,6 @@
 import inspect
 import sqlite3
-from typing import Any, Tuple, List, Union
+from typing import Tuple, List, Union
 
 
 # TODO: Use jinja2 templates for constructing SQL queries
@@ -68,9 +68,7 @@ class Database:
 
 class Table:
     def __init__(self, **kwargs) -> None:
-        self._data: dict[str, Value] = {
-            "id": None
-        }
+        self._data: dict[str, Value] = {"id": None}
         for key, value in kwargs.items():
             self._data[key] = value
 
@@ -129,9 +127,7 @@ class Table:
         placeholders = ", ".join(placeholders)
 
         sql = INSERT_SQL.format(
-            name=cls.__name__.lower(),
-            fields=fields,
-            placeholders=placeholders
+            name=cls.__name__.lower(), fields=fields, placeholders=placeholders
         )
         return sql, values
 
@@ -146,16 +142,15 @@ class Table:
             if isinstance(field, ForeignKey):
                 fields.append(name + "_id")
 
-        sql = SELECT_ALL_SQL.format(
-            name=cls.__name__.lower(),
-            fields=", ".join(fields)
-        )
+        sql = SELECT_ALL_SQL.format(name=cls.__name__.lower(), fields=", ".join(fields))
 
         return sql, fields
 
     def asdict(self) -> dict:
-        fields = self.fields
-        return {field: getattr(self, field) for field in fields}
+        serialized = {field: getattr(self, field) for field in self.fields}
+        serialized["id"] = self.id
+
+        return serialized
 
     @classmethod
     def _get_select_where_sql(cls, id: str | int) -> Tuple[str, List[str], List[str]]:
@@ -167,7 +162,9 @@ class Table:
             if isinstance(field, ForeignKey):
                 fields.append(name + "_id")
 
-        sql = SELECT_WHERE_SQL.format(name=cls.__name__.lower(), fields=", ".join(fields))
+        sql = SELECT_WHERE_SQL.format(
+            name=cls.__name__.lower(), fields=", ".join(fields)
+        )
         params = [id]
         return sql, fields, params
 
@@ -187,7 +184,7 @@ class Table:
 
         sql = UPDATE_SQL.format(
             name=cls.__name__.lower(),
-            fields=", ".join([f"{field} = ?" for field in fields])
+            fields=", ".join([f"{field} = ?" for field in fields]),
         )
 
         return sql, values
@@ -202,7 +199,6 @@ class Table:
 
 
 class Column:
-
     def __init__(self, column_type: type) -> None:
         self._type = column_type
 
