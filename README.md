@@ -1,6 +1,6 @@
 # Rizz ORM
 
-Rizz ORM is a lightweight Object-Relational Mapping (ORM) system designed to provide a Pythonic interface for interacting with SQLite databases. It allows developers to define their database schema in Python code and perform database operations without writing raw SQL queries.
+Rizz ORM is a lightweight Object-Relational Mapping (ORM) system designed to provide a Pythonic interface for interacting with SQL databases. It allows developers to define their database schema in Python code and perform database operations without writing raw SQL queries.
 
 ## Features
 
